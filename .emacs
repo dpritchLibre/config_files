@@ -29,14 +29,23 @@
 ;; disable graphical toolbar at the top of the screen
 (tool-bar-mode -1)
 
-;; see https://github.com/auto-complete/auto-complete/blob/master/doc/manual.md
-(require 'auto-complete-config)
-(add-to-list 'ac-dictionary-directories "~/.emacs.d/ac-dict")
-(ac-config-default)
-;; remove Python mode from auto-complete list of modes, since Elpy uses company
-(setq ac-modes (delq 'python-mode ac-modes))
-;; prevent completion menu from showing unless M-n or M-p is used
-(setq ac-auto-show-menu nil)
+;; ;; see https://github.com/auto-complete/auto-complete/blob/master/doc/manual.md
+;; (require 'auto-complete-config)
+;; (add-to-list 'ac-dictionary-directories "~/.emacs.d/ac-dict")
+;; (ac-config-default)
+;; ;; remove Python mode from auto-complete list of modes, since Elpy uses company
+;; (setq ac-modes (delq 'python-mode ac-modes))
+;; ;; prevent completion menu from showing unless M-n or M-p is used
+;; (setq ac-auto-show-menu nil)
+
+
+;; enable company mode in all buffers except for ESS buffers, in which we use
+;; auto-complete instead
+(setq company-global-modes '(not ess-mode))
+(global-company-mode 1)
+;; ;; enable company-mode in all buffers.  See http://company-mode.github.io
+;; (add-hook 'after-init-hook 'global-company-mode)
+
 
 
 ;; enables some additional features for dired, such as omitting uninteresting
@@ -47,14 +56,19 @@
 ;; load Emacs Speaks Statistics
 (require 'ess-site)
 
-;; add / change keybindings
+;; add / change keybindings.  See https://github.com/abo-abo/ace-window for
+;; details regarding ace-window
 (global-set-key (kbd "C-;") 'other-window)
 (global-set-key (kbd "C-M-;") 'previous-multiframe-window)
 (global-set-key (kbd "C-9") 'previous-buffer)
+(global-set-key (kbd "M-o") 'ace-window)
 (global-set-key (kbd "C-0") 'next-buffer)
 (global-set-key (kbd "M-[") 'scroll-down-line)
 (global-set-key (kbd "M-]") 'scroll-up-line)
 (global-set-key (kbd "C-.") 'xref-find-definitions-other-window)
+
+;; set default font size. Specifies font height in units of 1/10 pt
+(set-face-attribute 'default nil :height 110)
 
 ;; cc mode tab size 4 spaces
 (setq-default c-basic-offset 4)
@@ -102,10 +116,7 @@
 (add-hook 'ibuffer-mode-hook
 	  (lambda () (ibuffer-switch-to-saved-filter-groups "default")))
 
-;; set default font size. Specifies font height in units of 1/10 pt
-(set-face-attribute 'default nil :height 110)
-
-;; Allow color to work in shell.  See www.emacswiki.org/emacs/AnsiColor.
+;; allow color to work in shell.  See www.emacswiki.org/emacs/AnsiColor
 (add-hook 'shell-mode-hook 'ansi-color-for-comint-mode-on)
 (add-to-list 'comint-output-filter-functions 'ansi-color-process-output)
 
@@ -145,10 +156,11 @@
 	    (setq-local comment-add 0)         ; so that comments are # not ##
 	    (setq ess-roxy-str "#'")           ; Roxygen comments are #' not ##'
 	    (local-set-key (kbd "C-'") 'ess-switch-to-ESS)
+	    (local-set-key (kbd "C-S-m") (lambda () (interactive) (insert " %>% ")))
 	    (setq inferior-R-args "--no-restore-history --no-save ")
-	    (add-hook 'local-write-file-hooks
-		      (lambda ()
-			(ess-nuke-trailing-whitespace)))
+	    ;; (add-hook 'local-write-file-hooks
+	    ;; 	      (lambda ()
+	    ;; 		(ess-nuke-trailing-whitespace)))
 	    (setq ess-swv-processor 'knitr)                 ; weaver
 	    (setq ess-swv-pdflatex-commands '("pdflatex"))  ; LaTeX compiler
 	    (setq ess-nuke-trailing-whitespace-p t)         ; strip trailing whitespace w/o query
@@ -191,8 +203,10 @@
 	    (setq TeX-newline-function 'newline-and-indent)
 	    ;; Make AUCTex aware of multi-file document structure
 	    (setq-default TeX-master nil)
-	    ;; unset local keybinding
-	    (local-unset-key (kbd "C-;"))
+	    ;; unset local keybinding.  Note that this isn't the proper way to
+	    ;; do this, see the comment in
+	    ;; https://stackoverflow.com/a/7598754/5518304
+	    (define-key (LaTeX-mode-map "C-;" nil))
 	    ))
 
 ;; ;; below doesn't work right, what can be done?
@@ -292,7 +306,7 @@
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
    (quote
-    (flycheck yasnippet-snippets auto-complete sqlup-mode load-theme-buffer-local zenburn-theme slime multiple-cursors geiser ess elpy))))
+    (auctex ace-window magit flycheck yasnippet-snippets auto-complete sqlup-mode load-theme-buffer-local zenburn-theme slime multiple-cursors geiser ess elpy))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
