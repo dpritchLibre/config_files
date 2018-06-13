@@ -29,6 +29,28 @@
 ;; disable graphical toolbar at the top of the screen
 (tool-bar-mode -1)
 
+;; send backups to `~/.emacs.d/backups` rather than saving in the same directory
+;; as the file being backed up
+(setq backup-directory-alist '(("." . "~/.emacs.d/backups")))
+
+;; save history between Emacs instances.  From
+;; http://www.wisdomandwonder.com/wp-content/uploads/2014/03/C3F.html
+(setq savehist-file "~/.emacs.d/savehist")
+(savehist-mode 1)
+(setq history-length t)
+(setq history-delete-duplicates t)
+(setq savehist-save-minibuffer-history 1)
+(setq savehist-additional-variables
+      '(kill-ring
+        search-ring
+        regexp-search-ring))
+
+;; ;; enable ido.  See
+;; ;; https://www.masteringemacs.org/article/introduction-to-ido-mode
+;; (setq ido-enable-flex-matching t)
+;; (setq ido-everywhere t)
+;; (ido-mode 1)
+
 ;; ;; see https://github.com/auto-complete/auto-complete/blob/master/doc/manual.md
 ;; (require 'auto-complete-config)
 ;; (add-to-list 'ac-dictionary-directories "~/.emacs.d/ac-dict")
@@ -39,14 +61,16 @@
 ;; (setq ac-auto-show-menu nil)
 
 
-;; enable company mode in all buffers except for ESS buffers, in which we use
-;; auto-complete instead
-(setq company-global-modes '(not ess-mode))
-(global-company-mode 1)
-;; ;; enable company-mode in all buffers.  See http://company-mode.github.io
-;; (add-hook 'after-init-hook 'global-company-mode)
+;; ;; enable company mode in all buffers except for ESS buffers, in which we use
+;; ;; auto-complete instead
+;; (setq company-global-modes '(not ess-mode))
+;; (global-company-mode 1)
 
+;; enable company mode in all buffers.  See http://company-mode.github.io
+(add-hook 'after-init-hook 'global-company-mode)
 
+;; ;; enable flycheck mode in all buffers.  See http://www.flycheck.org/en/latest/
+;; (global-flycheck-mode)
 
 ;; enables some additional features for dired, such as omitting uninteresting
 ;; files (bound to C-x M-o).  See
@@ -58,14 +82,21 @@
 
 ;; add / change keybindings.  See https://github.com/abo-abo/ace-window for
 ;; details regarding ace-window
+(global-set-key (kbd "M-o") 'ace-window)
 (global-set-key (kbd "C-;") 'other-window)
 (global-set-key (kbd "C-M-;") 'previous-multiframe-window)
 (global-set-key (kbd "C-9") 'previous-buffer)
-(global-set-key (kbd "M-o") 'ace-window)
 (global-set-key (kbd "C-0") 'next-buffer)
 (global-set-key (kbd "M-[") 'scroll-down-line)
 (global-set-key (kbd "M-]") 'scroll-up-line)
 (global-set-key (kbd "C-.") 'xref-find-definitions-other-window)
+(global-set-key (kbd "C-x C-k") 'kill-this-buffer)
+
+;; remove `C-;` keybinding for `flyspell-auto-correct-previous-word` since we
+;; use it for global keybinding to 'other-window (see above keybinding
+;; additions)
+(eval-after-load "flyspell"
+  '(define-key flyspell-mode-map (kbd "C-;") nil))
 
 ;; set default font size. Specifies font height in units of 1/10 pt
 (set-face-attribute 'default nil :height 110)
@@ -86,10 +117,13 @@
 ;; default to truncate lines
 (set-default 'truncate-lines t)
 
-;; enable Icicles
-(add-to-list 'load-path (expand-file-name "~/.emacs.d/icicles/"))
-(require 'icicles)
-(icy-mode 1)
+;; type "y" or "n" instead of "yes" or "no"
+(fset 'yes-or-no-p 'y-or-n-p)
+
+;; ;; enable Icicles
+;; (add-to-list 'load-path (expand-file-name "~/.emacs.d/icicles/"))
+;; (require 'icicles)
+;; (icy-mode 1)
 
 ;; use Ibuffer for Buffer List
 (global-set-key (kbd "C-x C-b") 'ibuffer)
@@ -112,13 +146,22 @@
 				(mode . inferior-python-mode)
 				(mode . term-mode)
 				(mode . shell-mode)
-				(mode . slime-repl-mode)))))))
+				(mode . slime-repl-mode)))
+	       ("Org" (mode . org-mode))))))
 (add-hook 'ibuffer-mode-hook
 	  (lambda () (ibuffer-switch-to-saved-filter-groups "default")))
 
 ;; allow color to work in shell.  See www.emacswiki.org/emacs/AnsiColor
 (add-hook 'shell-mode-hook 'ansi-color-for-comint-mode-on)
 (add-to-list 'comint-output-filter-functions 'ansi-color-process-output)
+
+;; setup multi-term.  See https://www.emacswiki.org/emacs/MultiTerm
+(require 'multi-term)
+(setq multi-term-program "/bin/bash")
+
+;; (add-hook 'term-mode
+;; 	  (lambda ()
+;; 	    (define-key term-mode-map (kbd "C-j") 'term-line-mode)))
 
 ;; create function which cycles forwards through the kill ring
 (defun yank-pop-forwards (arg)
@@ -203,10 +246,10 @@
 	    (setq TeX-newline-function 'newline-and-indent)
 	    ;; Make AUCTex aware of multi-file document structure
 	    (setq-default TeX-master nil)
-	    ;; unset local keybinding.  Note that this isn't the proper way to
-	    ;; do this, see the comment in
-	    ;; https://stackoverflow.com/a/7598754/5518304
-	    (define-key (LaTeX-mode-map "C-;" nil))
+	    ;; ;; unset local keybinding.  Note that this isn't the proper way to
+	    ;; ;; do this, see the comment in
+	    ;; ;; https://stackoverflow.com/a/7598754/5518304
+	    ;; (define-key (LaTeX-mode-map "C-;" nil))
 	    ))
 
 ;; ;; below doesn't work right, what can be done?
@@ -229,12 +272,29 @@
 (setq inferior-lisp-program "/usr/bin/sbcl")
 ;; also setup the slime-fancy contributed package
 (add-to-list 'slime-contribs 'slime-fancy)
+;; use quicklisp's version of slime
+(load (expand-file-name "~/quicklisp/slime-helper.el"))
 
 ;; guile settings.  Inform guile that the only Scheme implementation currently
 ;; installed is mit-scheme so that it doesn't try to guess the wrong Scheme for
 ;; buffers.  See http://www.nongnu.org/geiser/geiser_3.html#choosing_002dimpl
 (setq geiser-active-implementations '(mit))
 
+;; `paredit` setup.  See http://wikemacs.org/wiki/Paredit-mode for details
+(autoload 'enable-paredit-mode "paredit"
+  "Turn on pseudo-structural editing of Lisp code."
+  t)
+(add-hook 'emacs-lisp-mode-hook       'enable-paredit-mode)
+(add-hook 'lisp-mode-hook             'enable-paredit-mode)
+(add-hook 'lisp-interaction-mode-hook 'enable-paredit-mode)
+(add-hook 'scheme-mode-hook           'enable-paredit-mode)
+;; Stop SLIME's REPL from grabbing DEL,
+;; which is annoying when backspacing over a '('
+(defun override-slime-repl-bindings-with-paredit ()
+  (define-key slime-repl-mode-map
+    (read-kbd-macro paredit-backward-delete-key)
+    nil))
+(add-hook 'slime-repl-mode-hook 'override-slime-repl-bindings-with-paredit)
 
 ;; Python settings
 (elpy-enable)
@@ -295,9 +355,6 @@
 
 
 
-;; (setq ess-use-auto-complete t)
-
-
 ;; end user-created section --------------------------------------------------------------
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
@@ -306,7 +363,7 @@
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
    (quote
-    (auctex ace-window magit flycheck yasnippet-snippets auto-complete sqlup-mode load-theme-buffer-local zenburn-theme slime multiple-cursors geiser ess elpy))))
+    (markdown-preview-mode markdown-mode paredit auctex ace-window magit flycheck yasnippet-snippets auto-complete sqlup-mode load-theme-buffer-local zenburn-theme multiple-cursors geiser ess elpy))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
