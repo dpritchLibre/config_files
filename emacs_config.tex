@@ -1,0 +1,124 @@
+% Created 2018-11-25 Sun 22:41
+\documentclass[11pt]{article}
+\PassOptionsToPackage{hyphens}{url}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{fixltx2e}
+\usepackage{graphicx}
+\usepackage{longtable}
+\usepackage{float}
+\usepackage{wrapfig}
+\usepackage{rotating}
+\usepackage[normalem]{ulem}
+\usepackage{amsmath}
+\usepackage{textcomp}
+\usepackage{marvosym}
+\usepackage{wasysym}
+\usepackage{amssymb}
+\usepackage{hyperref}
+\tolerance=1000
+\usepackage{listings}
+\usepackage[margin=1in]{geometry}
+\usepackage[x11names]{xcolor}
+\hypersetup{linktoc = all, colorlinks = true, urlcolor = DodgerBlue4, citecolor = PaleGreen1, linkcolor = black}
+\author{David Pritchard}
+\date{\today}
+\title{Emacs Configuration}
+\begin{document}
+
+\maketitle
+\tableofcontents
+
+% background color for code environments
+\definecolor{lightyellow}{RGB}{255,255,224}
+\definecolor{lightbrown}{RGB}{249,234,197}
+
+% create a listings environment for elisp
+\lstset{%
+  language=Lisp,
+  backgroundcolor=\color{lightyellow},
+  basicstyle=\fontsize{10}{11}\fontfamily{pcr}\selectfont,
+  keywordstyle=\color{Firebrick3},
+  stringstyle=\color{Green4},
+  showstringspaces=false,
+  commentstyle=\color{Purple3}
+  % frame=lines
+}
+
+
+\section{Configuration}
+\label{sec-1}
+
+TODO
+
+\subsection{Basic Configuration}
+\label{sec-1-1}
+
+\subsubsection{Set up the package management system}
+\label{sec-1-1-1}
+
+There are several Emacs package archives that can be used to download and update
+packages from.  Emacs comes bundled with a package manager called \texttt{package.el},
+which does the job of connecting to these archives and handling package
+downloads, managing dependencies, and so on.  Most notably, it includes the
+functions \texttt{package-list-packages} and \texttt{package-install}.  See
+\url{http://wikemacs.org/wiki/Package.el} for more details regarding \texttt{package.el}, and
+see \url{https://emacs.stackexchange.com/q/268/} for a description of the various
+package archives.
+
+The following code was taken from
+\url{http://cachestocaches.com/2015/8/getting-started-use-package/}.  Some open
+questions about this code remain:
+\begin{itemize}
+\item What does \texttt{package-initialize} do?  Autoload?
+\item What does the line \texttt{(setq package-enable-at-startup nil)} do?
+\item How does \texttt{require} know where to find \texttt{package}?
+\item Why do we need the call to \texttt{eval-when-compile}?
+\end{itemize}
+
+\lstset{language=Lisp,label= ,caption= ,numbers=none}
+\begin{lstlisting}
+(require 'package)
+(setq package-enable-at-startup nil)
+(add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/"))
+(add-to-list 'package-archives '("marmalade" . "http://marmalade-repo.org/packages/"))
+(add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/"))
+(package-initialize)
+
+(unless (package-installed-p 'use-package)
+  (package-refresh-contents)
+  (package-install 'use-package))
+
+(eval-when-compile
+  (require 'use-package))
+\end{lstlisting}
+
+
+
+
+\subsection{Redefine customization storage approach}
+\label{sec-1-2}
+
+Eamcs by default appends configuration information to your startup file.  For
+example, if you use the "Easy customization interface" (through \texttt{M-x customize}
+or by some other means), then your customizations are made permanent across
+Emacs instances by using this approach.  There are other ways that
+customizations can show up as well: for example \texttt{package.el} uses it to store a
+list of user-installed packages.
+
+However, there is something disagreeable about mixing user-written code and
+automatically generated code.  Furthermore, since the startup file is tangled
+from this Org file, we have no choice but to separate the automatically
+generated code to prevent it from being overwritten every time we tangle a new
+file.  This is what is done in the following code block.
+
+\lstset{language=Lisp,label= ,caption= ,numbers=none}
+\begin{lstlisting}
+;; direct Emacs to reflect future changes by updating the custom file
+(setq custom-file "~/.emacs.d/custom.el")
+;; load the existing file
+(when (file-exists-p custom-file)
+  (load custom-file))
+\end{lstlisting}
+% Emacs 25.3.2 (Org mode 8.2.10)
+\end{document}
